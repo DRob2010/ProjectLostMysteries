@@ -1,0 +1,208 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lost Mysteries</title>
+    <link rel="stylesheet" href="{% static 'game/style.css' %}">
+</head>
+<body>
+    {% if game_room %}
+        <main class="room-page fit-page">
+            <h1>Lost Mysteries</h1>
+            <p>Share this room code with the other player:</p>
+            <h2>{{ game_room.code }}</h2>
+
+            <p>You are <strong>P{{ player_number }}</strong>.</p>
+            <section class="player-cards">
+                <form method="post" class="role-card-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="player" value="{{ player_token }}">
+                    <button id="detective-card" class="role-card" type="submit" name="role" value="detective"
+                            aria-pressed="{% if player_role == 'Detective' %}true{% else %}false{% endif %}">
+                        <span class="role-title">The Detective</span>
+                        <span>Player <strong id="detective-player">
+                            {% if player_1_role_value == 'detective' %}P1{% elif player_2_role_value == 'detective' %}P2{% else %}—{% endif %}
+                        </strong></span>
+                        <span id="detective-status">
+                            {% if player_1_role_value == 'detective' %}{% if player_1_connected %}Connected{% else %}Disconnected{% endif %}
+                            {% elif player_2_role_value == 'detective' %}{% if player_2_connected %}Connected{% else %}Disconnected{% endif %}{% endif %}
+                        </span>
+                        <span id="detective-ready">
+                            {% if player_1_role_value == 'detective' %}{% if player_1_ready %}Ready{% else %}Not ready{% endif %}
+                            {% elif player_2_role_value == 'detective' %}{% if player_2_ready %}Ready{% else %}Not ready{% endif %}{% endif %}
+                        </span>
+                    </button>
+                </form>
+
+                <form method="post" class="role-card-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="player" value="{{ player_token }}">
+                    <button id="agent-card" class="role-card" type="submit" name="role" value="agent"
+                            aria-pressed="{% if player_role == 'Agent' %}true{% else %}false{% endif %}">
+                        <span class="role-title">The Agent</span>
+                        <span>Player <strong id="agent-player">
+                            {% if player_1_role_value == 'agent' %}P1{% elif player_2_role_value == 'agent' %}P2{% else %}—{% endif %}
+                        </strong></span>
+                        <span id="agent-status">
+                            {% if player_1_role_value == 'agent' %}{% if player_1_connected %}Connected{% else %}Disconnected{% endif %}
+                            {% elif player_2_role_value == 'agent' %}{% if player_2_connected %}Connected{% else %}Disconnected{% endif %}{% endif %}
+                        </span>
+                        <span id="agent-ready">
+                            {% if player_1_role_value == 'agent' %}{% if player_1_ready %}Ready{% else %}Not ready{% endif %}
+                            {% elif player_2_role_value == 'agent' %}{% if player_2_ready %}Ready{% else %}Not ready{% endif %}{% endif %}
+                        </span>
+                    </button>
+                </form>
+            </section>
+
+            <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="player" value="{{ player_token }}">
+            <button id="ready-button" class="ready-button" type="submit" name="action" value="ready">
+                {% if player_ready %}Unready{% else %}Ready{% endif %}
+            </button>
+            </form>
+
+            <p><span id="player-count">{{ player_count }}</span> of 2 players joined.</p>
+
+            <p id="room-status">
+            {% if both_ready %}{% if player_count < 2 %}Player is ready! The game can begin!{% else %}Both players are ready! The game can begin!{% endif %}
+            {% elif player_count < 2 %}Waiting for another player...
+            {% else %}Waiting for both players to be ready...{% endif %}
+            </p>
+            <p id="countdown" hidden></p>
+            <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="player" value="{{ player_token }}">
+            <button class="leave-button" type="submit" name="action" value="leave">Leave room</button>
+            </form>
+
+            <script>
+            const playerCount = document.getElementById("player-count");
+            const roomStatus = document.getElementById("room-status");
+            const countdown = document.getElementById("countdown");
+            let countdownStarted = false;
+
+            async function checkRoomStatus() {
+                const response = await fetch(
+                    "{% url 'room_status' game_room.code %}?player={{ player_token }}"
+                );
+                const data = await response.json();
+                playerCount.textContent = data.player_count;
+                roomStatus.textContent = data.player_count < 2
+                    ? "Waiting for another player..."
+                    : "Both players are here. The game can begin!";
+
+                const roleNames = { detective: "Detective", agent: "Agent" };
+                const detectivePlayer = data.player_1_role === "detective" ? "P1"
+                    : data.player_2_role === "detective" ? "P2" : "—";
+                const agentPlayer = data.player_1_role === "agent" ? "P1"
+                    : data.player_2_role === "agent" ? "P2" : "—";
+                document.getElementById("detective-player").textContent = detectivePlayer;
+                document.getElementById("agent-player").textContent = agentPlayer;
+                document.getElementById("detective-status").textContent =
+                    data.player_1_role === "detective"
+                        ? (data.player_1_connected ? "Connected" : "Disconnected")
+                        : data.player_2_role === "detective"
+                            ? (data.player_2_connected ? "Connected" : "Disconnected") : "";
+                document.getElementById("agent-status").textContent =
+                    data.player_1_role === "agent"
+                        ? (data.player_1_connected ? "Connected" : "Disconnected")
+                        : data.player_2_role === "agent"
+                            ? (data.player_2_connected ? "Connected" : "Disconnected") : "";
+                document.getElementById("detective-card").setAttribute(
+                    "aria-pressed", data.your_role === "detective"
+                );
+                document.getElementById("agent-card").setAttribute(
+                    "aria-pressed", data.your_role === "agent"
+                );
+                document.getElementById("detective-ready").textContent =
+                    data.player_1_role === "detective"
+                        ? (data.player_1_ready ? "Ready" : "Not ready")
+                        : data.player_2_role === "detective"
+                            ? (data.player_2_ready ? "Ready" : "Not ready") : "";
+                document.getElementById("agent-ready").textContent =
+                    data.player_1_role === "agent"
+                        ? (data.player_1_ready ? "Ready" : "Not ready")
+                        : data.player_2_role === "agent"
+                            ? (data.player_2_ready ? "Ready" : "Not ready") : "";
+                document.getElementById("ready-button").textContent =
+                    data.your_ready ? "Unready" : "Ready";
+                roomStatus.textContent = data.both_ready
+                    ? data.player_count < 2
+                        ? "Player is ready! The game can begin!"
+                        : "Both players are ready! The game can begin!"
+                    : data.player_count < 2
+                        ? "Waiting for another player..."
+                        : "Waiting for both players to be ready...";
+
+                if (data.both_ready && !countdownStarted) {
+                    countdownStarted = true;
+                    let seconds = 3;
+                    countdown.hidden = false;
+                    countdown.textContent = `Starting in ${seconds}...`;
+                    const timer = setInterval(() => {
+                        seconds -= 1;
+                        if (seconds > 0) {
+                            countdown.textContent = `Starting in ${seconds}...`;
+                        } else {
+                            clearInterval(timer);
+                            window.location.href =
+                                "{% url 'role_page' game_room.code %}?player={{ player_token }}";
+                        }
+                    }, 1000);
+                }
+            }
+
+            setInterval(checkRoomStatus, 2000);
+            </script>
+        </main>
+    {% else %}
+        <main class="home-page fit-page">
+            <h1>Lost Mysteries</h1>
+
+            {% if error %}<p>{{ error }}</p>{% endif %}
+
+            <section class="room-options">
+                <article class="room-option">
+                    <h2>Create a Room</h2>
+                    <p>Start a new game and invite another player.</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" name="action" value="create">Create Room</button>
+                    </form>
+                </article>
+
+                <article class="room-option">
+                    <h2>Join a Room</h2>
+                    <p>Enter a room code to join an existing game.</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <label for="code">Room code:</label>
+                        <input id="code" name="code" maxlength="6" required>
+                        <button type="submit" name="action" value="join">Join Room</button>
+                    </form>
+                </article>
+            </section>
+        </main>
+    {% endif %}
+    <script>
+        function fitPageToViewport() {
+            const page = document.querySelector(".fit-page");
+            if (!page) return;
+            page.style.transform = "scale(1)";
+            const scale = Math.min(
+                window.innerWidth / page.scrollWidth,
+                window.innerHeight / page.scrollHeight,
+                1.15
+            );
+            page.style.transform = `scale(${Math.max(scale, 0.65)})`;
+        }
+
+        window.addEventListener("resize", fitPageToViewport);
+        fitPageToViewport();
+    </script>
+</body>
+</html>

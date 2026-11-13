@@ -1,0 +1,672 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Detective Role</title>
+    <link rel="stylesheet" href="{% static 'game/style.css' %}">
+</head>
+<body>
+    <main class="fit-page role-page">
+        <section class="play-space">
+            <div class="play-content">
+                <form hidden>{% csrf_token %}</form>
+                <div id="puzzle-board" class="puzzle-board">
+                    <div id="puzzle-piece" class="interactable puzzle-piece magnifying-glass"
+                         aria-label="Draggable magnifying glass" tabindex="0">
+                        <span class="magnifying-lens-shape" aria-hidden="true"></span>
+                        <span class="magnifying-connector" aria-hidden="true"></span>
+                        <span class="magnifying-handle" aria-hidden="true"></span>
+                    </div>
+                    <button id="case-file" class="interactable case-file" type="button"
+                            aria-label="Open case file">
+                        <span class="file-body"></span>
+                        <span class="file-paper" aria-hidden="true">
+                            <span class="file-paper-title">Great Business</span>
+                            <span class="file-paper-text">Richy McFarland is a wealthy technology businessman who built his fortune through innovation. He has a strong appreciation for <span class="smudged-gold"><span class="visible-g">G</span><span class="blurred-old">OLD</span></span> and stores it in vault 1234.</span>
+                        </span>
+                        <span class="file-label" aria-hidden="true">file:</span>
+                        <span class="file-letter" aria-hidden="true">G</span>
+                    </button>
+                    <button id="letter-file-o" class="interactable letter-file" type="button"
+                            aria-label="O file">
+                        <span class="file-body"></span>
+                        <span class="file-paper" aria-hidden="true">
+                            <span class="file-paper-title">Oil Sales</span>
+                            <span class="file-paper-text">Side project idea: sell carefully selected olive oil from small off-grid farms. Each bottle will be known for its smooth flavor, golden color, and carefully sourced ingredients.</span>
+                        </span>
+                        <span class="file-label" aria-hidden="true">file:</span>
+                        <span class="file-letter" aria-hidden="true">O</span>
+                        <span class="pocket-knife" aria-hidden="true">
+                            <span class="knife-blade"></span>
+                            <span class="knife-handle"></span>
+                            <span class="knife-hinge"></span>
+                        </span>
+                    </button>
+                    <button id="letter-file-l" class="interactable letter-file" type="button"
+                            aria-label="L file">
+                        <span class="file-body"></span>
+                        <span class="file-paper" aria-hidden="true">
+                            <span class="file-paper-title">Laser field</span>
+                            <img class="file-maze" src="{% static 'game/images/laser-maze.png' %}" alt="">
+                            <span class="maze-start-dot" aria-hidden="true"></span>
+                            <span class="maze-end-arrow" aria-hidden="true">↑</span>
+                        </span>
+                        <span class="file-label" aria-hidden="true">file:</span>
+                        <span class="file-letter" aria-hidden="true">L</span>
+                    </button>
+                    <button id="letter-file-d" class="interactable letter-file" type="button"
+                            aria-label="D file">
+                        <span class="file-body"></span>
+                        <span class="file-paper" aria-hidden="true">
+                            <span class="file-paper-title">Day of Control</span>
+                            <span class="file-paper-text">Our new mobile device update goes live at 11:25 pm on November 14th. Using our latest blue light tech, it is designed to make our customers want our latest technology.</span>
+                        </span>
+                        <span class="file-label" aria-hidden="true">file:</span>
+                        <span class="file-letter" aria-hidden="true">D</span>
+                    </button>
+                    <section id="remote-control" class="interactable remote-control" aria-label="Remote control">
+                        <span class="remote-antenna" aria-hidden="true"></span>
+                        <div class="remote-top-buttons">
+                            <button type="button" class="remote-button remote-red" aria-label="Power button"></button>
+                            <button type="button" class="remote-button remote-gray" aria-label="Remote button"></button>
+                        </div>
+                        <div class="remote-battery-slot" aria-label="Battery slot">
+                        </div>
+                        <div class="remote-keypad" aria-label="Number pad">
+                            <button type="button" data-remote-digit="1">1</button>
+                            <button type="button" data-remote-digit="2">2</button>
+                            <button type="button" data-remote-digit="3">3</button>
+                            <button type="button" data-remote-digit="4">4</button>
+                            <button type="button" data-remote-digit="5">5</button>
+                            <button type="button" data-remote-digit="6">6</button>
+                            <button type="button" data-remote-digit="7">7</button>
+                            <button type="button" data-remote-digit="8">8</button>
+                            <button type="button" data-remote-digit="9">9</button>
+                            <button type="button" data-remote-digit="0">0</button>
+                        </div>
+                    </section>
+                    <span id="remote-battery" class="remote-battery" aria-label="Remote battery">
+                        <span class="battery-minus" aria-hidden="true">−</span>
+                    </span>
+                    <div class="envelope" aria-label="Envelope">
+                        <span class="envelope-flap" aria-hidden="true"></span>
+                        <span class="envelope-seal" aria-hidden="true">✦</span>
+                    </div>
+                    <div id="magnifier-lens" class="magnifier-lens" hidden>
+                        <div id="magnifier-view"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script>
+        const board = document.getElementById("puzzle-board");
+        const piece = document.getElementById("puzzle-piece");
+        const magnifierLens = document.getElementById("magnifier-lens");
+        const magnifierView = document.getElementById("magnifier-view");
+        const letterFiles = [...document.querySelectorAll(".letter-file")];
+        const remoteControl = document.getElementById("remote-control");
+        const envelope = document.querySelector(".envelope");
+        const pocketKnife = document.querySelector("#letter-file-o .pocket-knife");
+        const remoteBattery = document.getElementById("remote-battery");
+        const remoteBatterySlot = document.querySelector(".remote-battery-slot");
+        const powerButton = document.querySelector(".remote-red");
+        const remoteGrayButton = document.querySelector(".remote-gray");
+        let remoteCode = "";
+        let remotePower = false;
+        let remoteGrayPressed = false;
+        let remoteGrayPromptId = 0;
+        let remoteDragging = false;
+        let remoteMoved = false;
+        let remoteStartPointerX = 0;
+        let remoteStartPointerY = 0;
+        let remoteStartLeft = 0;
+        let remoteStartTop = 0;
+        let envelopeDragging = false;
+        let envelopeMoved = false;
+        let envelopeStartPointerX = 0;
+        let envelopeStartPointerY = 0;
+        let envelopeStartLeft = 0;
+        let envelopeStartTop = 0;
+        let batteryDragging = false;
+        let batteryStartPointerX = 0;
+        let batteryStartPointerY = 0;
+        let batteryStartLeft = 0;
+        let batteryStartTop = 0;
+        let knifeDragging = false;
+        let knifeStartPointerX = 0;
+        let knifeStartPointerY = 0;
+        let knifeStartLeft = 0;
+        let knifeStartTop = 0;
+
+        function releasePocketKnife() {
+            if (pocketKnife.classList.contains("released")) return;
+            const knifeRect = pocketKnife.getBoundingClientRect();
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            board.appendChild(pocketKnife);
+            pocketKnife.classList.add("released");
+            pocketKnife.style.left = `${(knifeRect.left - boardRect.left) / scaleX}px`;
+            pocketKnife.style.top = `${(knifeRect.top - boardRect.top) / scaleY}px`;
+            pocketKnife.style.transform = "rotate(-18deg)";
+        }
+
+        function revealBatteryFromEnvelope() {
+            if (remoteBattery.classList.contains("revealed")) return;
+            remoteBattery.style.left = `${envelope.offsetLeft + 55}px`;
+            remoteBattery.style.top = `${envelope.offsetTop + envelope.offsetHeight + 8}px`;
+            remoteBattery.classList.add("revealed");
+        }
+
+        function insertBatteryIntoRemote() {
+            if (remoteBattery.classList.contains("inserted")) return;
+            remoteBatterySlot.appendChild(remoteBattery);
+            remoteBattery.classList.add("inserted");
+            remoteControl.classList.add("has-battery");
+            remoteBattery.style.left = "50%";
+            remoteBattery.style.top = "50%";
+            remoteBattery.style.transform = "translate(-50%, -50%)";
+        }
+
+        function openEnvelope() {
+            if (envelope.classList.contains("opened")) return;
+            envelope.classList.add("opened");
+            revealBatteryFromEnvelope();
+            saveGameState();
+        }
+
+        function objectsOverlap(first, second) {
+            const firstRect = first.getBoundingClientRect();
+            const secondRect = second.getBoundingClientRect();
+            return firstRect.left < secondRect.right &&
+                firstRect.right > secondRect.left &&
+                firstRect.top < secondRect.bottom &&
+                firstRect.bottom > secondRect.top;
+        }
+        const stateUrl = "{% url 'player_state' game_room.code %}?player={{ request.GET.player }}";
+        const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+        async function saveGameState() {
+            await fetch(stateUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken
+                },
+                body: JSON.stringify({
+                    magnifier_left: piece.style.left,
+                    magnifier_top: piece.style.top,
+                    file_left: caseFile.style.left,
+                    file_top: caseFile.style.top,
+                    file_open: caseFile.classList.contains("opened"),
+                    remote_left: remoteControl.style.left,
+                    remote_top: remoteControl.style.top,
+                    envelope_left: envelope.style.left,
+                    envelope_top: envelope.style.top,
+                    envelope_open: envelope.classList.contains("opened"),
+                    battery_left: remoteBattery.style.left,
+                    battery_top: remoteBattery.style.top,
+                    battery_revealed: remoteBattery.classList.contains("revealed"),
+                    battery_inserted: remoteBattery.classList.contains("inserted"),
+                    remote_power_on: remotePower,
+                    remote_code: remoteCode,
+                    remote_gray_pressed: remoteGrayPressed,
+                    remote_gray_prompt_id: remoteGrayPromptId,
+                    knife_left: pocketKnife.style.left,
+                    knife_top: pocketKnife.style.top,
+                    knife_released: pocketKnife.classList.contains("released"),
+                    letter_files: letterFiles.map((file) => ({
+                        id: file.id,
+                        left: file.style.left,
+                        top: file.style.top,
+                        open: file.classList.contains("opened")
+                    }))
+                })
+            });
+        }
+        let dragging = false;
+        let moved = false;
+        let startPointerX = 0;
+        let startPointerY = 0;
+        let startPieceLeft = 0;
+        let startPieceTop = 0;
+        const zoom = 2;
+        const lensSize = 180;
+
+        function updateMagnifierLens() {
+            const focusX = piece.offsetLeft + piece.offsetWidth / 2;
+            const focusY = piece.offsetTop + piece.offsetHeight / 2;
+            magnifierLens.style.left = `${focusX - lensSize / 2}px`;
+            magnifierLens.style.top = `${focusY - lensSize / 2}px`;
+
+            const source = board.cloneNode(true);
+            source.removeAttribute("id");
+            source.className = "lens-source";
+            source.querySelector("#puzzle-piece")?.remove();
+            source.querySelector("#magnifier-lens")?.remove();
+            magnifierView.replaceChildren(source);
+            source.style.left = `${lensSize / 2 - focusX * zoom}px`;
+            source.style.top = `${lensSize / 2 - focusY * zoom}px`;
+            source.style.transform = `scale(${zoom})`;
+        }
+
+        piece.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            dragging = true;
+            moved = false;
+            piece.setPointerCapture(event.pointerId);
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            startPointerX = (event.clientX - boardRect.left) / scaleX;
+            startPointerY = (event.clientY - boardRect.top) / scaleY;
+            startPieceLeft = piece.offsetLeft;
+            startPieceTop = piece.offsetTop;
+            piece.classList.add("dragging");
+            updateMagnifierLens();
+            magnifierLens.hidden = false;
+        });
+
+        piece.addEventListener("pointermove", (event) => {
+            if (!dragging) return;
+            event.preventDefault();
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            const pointerX = (event.clientX - boardRect.left) / scaleX;
+            const pointerY = (event.clientY - boardRect.top) / scaleY;
+            const deltaX = pointerX - startPointerX;
+            const deltaY = pointerY - startPointerY;
+            moved = Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3;
+            const x = startPieceLeft + deltaX;
+            const y = startPieceTop + deltaY;
+            piece.style.left = `${Math.max(0, Math.min(board.offsetWidth - piece.offsetWidth, x))}px`;
+            piece.style.top = `${Math.max(0, Math.min(board.offsetHeight - piece.offsetHeight, y))}px`;
+            updateMagnifierLens();
+        });
+
+        piece.addEventListener("pointerup", () => {
+            dragging = false;
+            piece.classList.remove("dragging");
+            magnifierLens.hidden = true;
+            saveGameState();
+        });
+
+        piece.addEventListener("click", () => {
+            moved = false;
+        });
+
+        const caseFile = document.getElementById("case-file");
+        let fileDragging = false;
+        let fileMoved = false;
+        let fileStartPointerX = 0;
+        let fileStartPointerY = 0;
+        let fileStartLeft = 0;
+        let fileStartTop = 0;
+
+        caseFile.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            fileDragging = true;
+            fileMoved = false;
+            caseFile.setPointerCapture(event.pointerId);
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            fileStartPointerX = (event.clientX - boardRect.left) / scaleX;
+            fileStartPointerY = (event.clientY - boardRect.top) / scaleY;
+            fileStartLeft = caseFile.offsetLeft;
+            fileStartTop = caseFile.offsetTop;
+            caseFile.classList.add("dragging");
+        });
+
+        caseFile.addEventListener("pointermove", (event) => {
+            if (!fileDragging) return;
+            event.preventDefault();
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            const pointerX = (event.clientX - boardRect.left) / scaleX;
+            const pointerY = (event.clientY - boardRect.top) / scaleY;
+            const deltaX = pointerX - fileStartPointerX;
+            const deltaY = pointerY - fileStartPointerY;
+            fileMoved = Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3;
+            const x = fileStartLeft + deltaX;
+            const y = fileStartTop + deltaY;
+            caseFile.style.left = `${Math.max(0, Math.min(board.offsetWidth - caseFile.offsetWidth, x))}px`;
+            caseFile.style.top = `${Math.max(0, Math.min(board.offsetHeight - caseFile.offsetHeight, y))}px`;
+        });
+
+        caseFile.addEventListener("pointerup", () => {
+            fileDragging = false;
+            caseFile.classList.remove("dragging");
+        });
+
+        caseFile.addEventListener("click", () => {
+            if (!fileMoved) {
+                const oldHeight = caseFile.offsetHeight;
+                caseFile.classList.toggle("opened");
+                const newHeight = caseFile.offsetHeight;
+                caseFile.style.top = `${caseFile.offsetTop - (newHeight - oldHeight) / 2}px`;
+                saveGameState();
+            }
+            fileMoved = false;
+        });
+
+        letterFiles.forEach((file) => {
+            let fileDragging = false;
+            let fileMoved = false;
+            let fileStartPointerX = 0;
+            let fileStartPointerY = 0;
+            let fileStartLeft = 0;
+            let fileStartTop = 0;
+
+            file.addEventListener("pointerdown", (event) => {
+                event.preventDefault();
+                fileDragging = true;
+                fileMoved = false;
+                file.setPointerCapture(event.pointerId);
+                const boardRect = board.getBoundingClientRect();
+                const scaleX = boardRect.width / board.offsetWidth;
+                const scaleY = boardRect.height / board.offsetHeight;
+                fileStartPointerX = (event.clientX - boardRect.left) / scaleX;
+                fileStartPointerY = (event.clientY - boardRect.top) / scaleY;
+                fileStartLeft = file.offsetLeft;
+                fileStartTop = file.offsetTop;
+                file.classList.add("dragging");
+            });
+
+            file.addEventListener("pointermove", (event) => {
+                if (!fileDragging) return;
+                event.preventDefault();
+                const boardRect = board.getBoundingClientRect();
+                const scaleX = boardRect.width / board.offsetWidth;
+                const scaleY = boardRect.height / board.offsetHeight;
+                const pointerX = (event.clientX - boardRect.left) / scaleX;
+                const pointerY = (event.clientY - boardRect.top) / scaleY;
+                const deltaX = pointerX - fileStartPointerX;
+                const deltaY = pointerY - fileStartPointerY;
+                fileMoved = Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3;
+                const x = fileStartLeft + deltaX;
+                const y = fileStartTop + deltaY;
+                file.style.left = `${Math.max(0, Math.min(board.offsetWidth - file.offsetWidth, x))}px`;
+                file.style.top = `${Math.max(0, Math.min(board.offsetHeight - file.offsetHeight, y))}px`;
+            });
+
+            file.addEventListener("pointerup", () => {
+                fileDragging = false;
+                file.classList.remove("dragging");
+                saveGameState();
+            });
+
+            file.addEventListener("click", () => {
+                if (!fileMoved) {
+                    const oldHeight = file.offsetHeight;
+                    file.classList.toggle("opened");
+                    const newHeight = file.offsetHeight;
+                    file.style.top = `${file.offsetTop - (newHeight - oldHeight) / 2}px`;
+                    saveGameState();
+                }
+                fileMoved = false;
+            });
+        });
+
+        document.querySelectorAll("[data-remote-digit]").forEach((button) => {
+            button.addEventListener("click", () => {
+                if (!remoteBattery.classList.contains("inserted")) return;
+                remoteCode = `${remoteCode}${button.dataset.remoteDigit}`.slice(-4);
+                button.classList.add("pressed");
+                window.setTimeout(() => button.classList.remove("pressed"), 120);
+                saveGameState();
+            });
+        });
+
+        powerButton.addEventListener("click", () => {
+            if (!remoteBattery.classList.contains("inserted")) return;
+            remotePower = !remotePower;
+            saveGameState();
+        });
+
+        remoteGrayButton.addEventListener("click", () => {
+            if (!remoteGrayButton.classList.contains("gold-unlocked")) return;
+            remoteGrayPressed = true;
+            remoteGrayPromptId += 1;
+            saveGameState();
+        });
+
+        remoteControl.addEventListener("pointerdown", (event) => {
+            if (event.target.closest("button")) return;
+            event.preventDefault();
+            remoteDragging = true;
+            remoteMoved = false;
+            remoteControl.setPointerCapture(event.pointerId);
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            remoteStartPointerX = (event.clientX - boardRect.left) / scaleX;
+            remoteStartPointerY = (event.clientY - boardRect.top) / scaleY;
+            remoteStartLeft = remoteControl.offsetLeft;
+            remoteStartTop = remoteControl.offsetTop;
+            remoteControl.classList.add("dragging");
+        });
+
+        remoteControl.addEventListener("pointermove", (event) => {
+            if (!remoteDragging) return;
+            event.preventDefault();
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            const pointerX = (event.clientX - boardRect.left) / scaleX;
+            const pointerY = (event.clientY - boardRect.top) / scaleY;
+            const deltaX = pointerX - remoteStartPointerX;
+            const deltaY = pointerY - remoteStartPointerY;
+            remoteMoved = Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3;
+            remoteControl.style.left = `${Math.max(0, Math.min(board.offsetWidth - remoteControl.offsetWidth, remoteStartLeft + deltaX))}px`;
+            remoteControl.style.top = `${Math.max(0, Math.min(board.offsetHeight - remoteControl.offsetHeight, remoteStartTop + deltaY))}px`;
+        });
+
+        remoteControl.addEventListener("pointerup", () => {
+            if (!remoteDragging) return;
+            remoteDragging = false;
+            remoteControl.classList.remove("dragging");
+            if (remoteMoved) saveGameState();
+        });
+
+        remoteBattery.addEventListener("pointerdown", (event) => {
+            if (remoteBattery.classList.contains("inserted")) return;
+            event.preventDefault();
+            event.stopPropagation();
+            batteryDragging = true;
+            remoteBattery.setPointerCapture(event.pointerId);
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            batteryStartPointerX = (event.clientX - boardRect.left) / scaleX;
+            batteryStartPointerY = (event.clientY - boardRect.top) / scaleY;
+            batteryStartLeft = remoteBattery.offsetLeft;
+            batteryStartTop = remoteBattery.offsetTop;
+            remoteBattery.classList.add("dragging");
+        });
+
+        remoteBattery.addEventListener("pointermove", (event) => {
+            if (!batteryDragging) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            const pointerX = (event.clientX - boardRect.left) / scaleX;
+            const pointerY = (event.clientY - boardRect.top) / scaleY;
+            const deltaX = pointerX - batteryStartPointerX;
+            const deltaY = pointerY - batteryStartPointerY;
+            remoteBattery.style.left = `${Math.max(0, Math.min(board.offsetWidth - remoteBattery.offsetWidth, batteryStartLeft + deltaX))}px`;
+            remoteBattery.style.top = `${Math.max(0, Math.min(board.offsetHeight - remoteBattery.offsetHeight, batteryStartTop + deltaY))}px`;
+        });
+
+        remoteBattery.addEventListener("pointerup", () => {
+            if (!batteryDragging) return;
+            batteryDragging = false;
+            remoteBattery.classList.remove("dragging");
+            if (objectsOverlap(remoteBattery, remoteBatterySlot)) {
+                insertBatteryIntoRemote();
+            }
+            saveGameState();
+        });
+
+        envelope.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            envelopeDragging = true;
+            envelopeMoved = false;
+            envelope.setPointerCapture(event.pointerId);
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            envelopeStartPointerX = (event.clientX - boardRect.left) / scaleX;
+            envelopeStartPointerY = (event.clientY - boardRect.top) / scaleY;
+            envelopeStartLeft = envelope.offsetLeft;
+            envelopeStartTop = envelope.offsetTop;
+            envelope.classList.add("dragging");
+        });
+
+        envelope.addEventListener("pointermove", (event) => {
+            if (!envelopeDragging) return;
+            event.preventDefault();
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            const pointerX = (event.clientX - boardRect.left) / scaleX;
+            const pointerY = (event.clientY - boardRect.top) / scaleY;
+            const deltaX = pointerX - envelopeStartPointerX;
+            const deltaY = pointerY - envelopeStartPointerY;
+            envelopeMoved = Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3;
+            envelope.style.left = `${Math.max(0, Math.min(board.offsetWidth - envelope.offsetWidth, envelopeStartLeft + deltaX))}px`;
+            envelope.style.top = `${Math.max(0, Math.min(board.offsetHeight - envelope.offsetHeight, envelopeStartTop + deltaY))}px`;
+        });
+
+        envelope.addEventListener("pointerup", () => {
+            if (!envelopeDragging) return;
+            envelopeDragging = false;
+            envelope.classList.remove("dragging");
+            if (envelopeMoved) saveGameState();
+        });
+
+        pocketKnife.addEventListener("pointerdown", (event) => {
+            if (!pocketKnife.classList.contains("released") && !document.getElementById("letter-file-o").classList.contains("opened")) return;
+            event.preventDefault();
+            event.stopPropagation();
+            releasePocketKnife();
+            knifeDragging = true;
+            pocketKnife.setPointerCapture(event.pointerId);
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            knifeStartPointerX = (event.clientX - boardRect.left) / scaleX;
+            knifeStartPointerY = (event.clientY - boardRect.top) / scaleY;
+            knifeStartLeft = pocketKnife.offsetLeft;
+            knifeStartTop = pocketKnife.offsetTop;
+            pocketKnife.classList.add("dragging");
+        });
+
+        pocketKnife.addEventListener("pointermove", (event) => {
+            if (!knifeDragging) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            const pointerX = (event.clientX - boardRect.left) / scaleX;
+            const pointerY = (event.clientY - boardRect.top) / scaleY;
+            const deltaX = pointerX - knifeStartPointerX;
+            const deltaY = pointerY - knifeStartPointerY;
+            pocketKnife.style.left = `${Math.max(0, Math.min(board.offsetWidth - pocketKnife.offsetWidth, knifeStartLeft + deltaX))}px`;
+            pocketKnife.style.top = `${Math.max(0, Math.min(board.offsetHeight - pocketKnife.offsetHeight, knifeStartTop + deltaY))}px`;
+            if (objectsOverlap(pocketKnife, envelope)) openEnvelope();
+        });
+
+        pocketKnife.addEventListener("pointerup", (event) => {
+            if (!knifeDragging) return;
+            event.stopPropagation();
+            knifeDragging = false;
+            pocketKnife.classList.remove("dragging");
+            saveGameState();
+        });
+
+        pocketKnife.addEventListener("click", (event) => event.stopPropagation());
+
+        async function loadGameState() {
+            const response = await fetch(stateUrl);
+            const data = await response.json();
+            const state = data.state || {};
+            remotePower = Boolean(state.remote_power_on);
+            remoteCode = state.remote_code || "";
+            remoteGrayPressed = Boolean(state.remote_gray_pressed);
+            remoteGrayPromptId = Number(state.remote_gray_prompt_id || 0);
+            const agentLetters = Array.isArray(data.opponent_state?.pass_letters)
+                ? data.opponent_state.pass_letters.join("")
+                : "";
+            remoteGrayButton.classList.toggle("gold-unlocked", agentLetters === "GOLD");
+            const agentState = data.opponent_state || {};
+            if (
+                agentState.cancel_response === "yes" &&
+                Number(agentState.cancel_prompt_id || 0) === remoteGrayPromptId
+            ) {
+                window.location.href = "{% url 'win_page' game_room.code %}";
+                return;
+            }
+            if (state.magnifier_left) piece.style.left = state.magnifier_left;
+            if (state.magnifier_top) piece.style.top = state.magnifier_top;
+            if (state.file_left) caseFile.style.left = state.file_left;
+            if (state.file_top) caseFile.style.top = state.file_top;
+            if (state.file_open) caseFile.classList.add("opened");
+            if (state.remote_left) remoteControl.style.left = state.remote_left;
+            if (state.remote_top) remoteControl.style.top = state.remote_top;
+            if (state.envelope_left) envelope.style.left = state.envelope_left;
+            if (state.envelope_top) envelope.style.top = state.envelope_top;
+            if (state.envelope_open) envelope.classList.add("opened");
+            if (state.battery_left) remoteBattery.style.left = state.battery_left;
+            if (state.battery_top) remoteBattery.style.top = state.battery_top;
+            if (state.battery_revealed || state.envelope_open) {
+                revealBatteryFromEnvelope();
+                if (state.battery_left) remoteBattery.style.left = state.battery_left;
+                if (state.battery_top) remoteBattery.style.top = state.battery_top;
+            }
+            if (state.battery_inserted && !batteryDragging) insertBatteryIntoRemote();
+            if (state.knife_released) {
+                board.appendChild(pocketKnife);
+                pocketKnife.classList.add("released");
+                pocketKnife.style.transform = "rotate(-18deg)";
+            }
+            if (state.knife_left) pocketKnife.style.left = state.knife_left;
+            if (state.knife_top) pocketKnife.style.top = state.knife_top;
+            (state.letter_files || []).forEach((savedFile) => {
+                const file = document.getElementById(savedFile.id);
+                if (!file) return;
+                if (savedFile.left) file.style.left = savedFile.left;
+                if (savedFile.top) file.style.top = savedFile.top;
+                if (savedFile.open) file.classList.add("opened");
+            });
+        }
+
+        loadGameState();
+        window.setInterval(loadGameState, 700);
+    </script>
+    <script>
+        function fitPageToViewport() {
+            const page = document.querySelector(".fit-page");
+            const playSpace = document.querySelector(".play-space");
+            const playContent = document.querySelector(".play-content");
+            page.style.transform = "scale(1)";
+            const scale = Math.min(window.innerWidth / page.scrollWidth, window.innerHeight / page.scrollHeight, 1.15);
+            page.style.transform = `scale(${Math.max(scale, 0.65)})`;
+            playContent.style.setProperty(
+                "--play-scale",
+                Math.min(playSpace.clientWidth / 960, playSpace.clientHeight / 540)
+            );
+        }
+        window.addEventListener("resize", fitPageToViewport);
+        fitPageToViewport();
+    </script>
+</body>
+</html>

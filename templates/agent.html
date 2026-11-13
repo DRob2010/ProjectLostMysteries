@@ -1,0 +1,643 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agent Role</title>
+    <link rel="stylesheet" href="{% static 'game/style.css' %}">
+</head>
+<body>
+    <main class="fit-page role-page">
+        <section class="play-space">
+            <div class="play-content">
+                <form hidden>{% csrf_token %}</form>
+                <div id="puzzle-board" class="puzzle-board">
+                    <div id="puzzle-piece" class="interactable briefcase-object" tabindex="0">
+                        <div class="briefcase-closed" aria-label="Locked computer briefcase">
+                            <span class="briefcase-corner corner-top-left" aria-hidden="true"></span>
+                            <span class="briefcase-corner corner-top-right" aria-hidden="true"></span>
+                            <span class="briefcase-corner corner-bottom-left" aria-hidden="true"></span>
+                            <span class="briefcase-corner corner-bottom-right" aria-hidden="true"></span>
+                        </div>
+                        <div class="briefcase-open-card" aria-label="Opened briefcase">
+                            <div class="open-left-display" aria-label="Display off">
+                                <span class="display-status">OFF</span>
+                                <div class="agent-maze" aria-label="Hidden-wall maze">
+                                    <span class="agent-maze-dot"></span>
+                                </div>
+                            </div>
+                            <div class="keyboard-mount" aria-hidden="true"></div>
+                            <div id="keyboard-wires" class="keyboard-wires" aria-hidden="true">
+                                <i></i><i></i>
+                            </div>
+                            <div id="computer-keyboard" class="open-left-keyboard" aria-label="Computer keyboard">
+                                <span class="keyboard-screw screw-top-left" data-screw="top-left" aria-label="Keyboard screw"></span>
+                                <span class="keyboard-screw screw-top-right" data-screw="top-right" aria-label="Keyboard screw"></span>
+                                <span class="keyboard-screw screw-bottom-left" data-screw="bottom-left" aria-label="Keyboard screw"></span>
+                                <span class="keyboard-screw screw-bottom-right" data-screw="bottom-right" aria-label="Keyboard screw"></span>
+                                <button type="button" class="keyboard-key">Q</button>
+                                <button type="button" class="keyboard-key move-key" data-move="up">W</button>
+                                <button type="button" class="keyboard-key">E</button>
+                                <button type="button" class="keyboard-key">R</button>
+                                <button type="button" class="keyboard-key">T</button>
+                                <button type="button" class="keyboard-key">Y</button>
+                                <button type="button" class="keyboard-key move-key" data-move="left">A</button>
+                                <button type="button" class="keyboard-key move-key" data-move="down">S</button>
+                                <button type="button" class="keyboard-key move-key" data-move="right">D</button>
+                                <button type="button" class="keyboard-key">F</button>
+                                <button type="button" class="keyboard-key">G</button>
+                                <button type="button" class="keyboard-key">H</button>
+                                <button type="button" class="keyboard-key">Z</button>
+                                <button type="button" class="keyboard-key">X</button>
+                                <button type="button" class="keyboard-key">C</button>
+                                <button type="button" class="keyboard-key">V</button>
+                                <button type="button" class="keyboard-key">B</button>
+                                <button type="button" class="keyboard-key">N</button>
+                                <button type="button" class="keyboard-key keyboard-space">SPACE</button>
+                            </div>
+                            <div class="screwdriver" aria-label="Screwdriver">
+                                <span class="screwdriver-handle" aria-hidden="true"></span>
+                                <span class="screwdriver-shaft" aria-hidden="true"></span>
+                                <span class="screwdriver-tip" aria-hidden="true"></span>
+                            </div>
+                            <div class="right-case-controls" aria-label="Briefcase control panel">
+                                <div class="control-time">15:00</div>
+                                <div class="control-display" aria-label="Display"></div>
+                                <div class="control-yn">
+                                    <button type="button">Y</button>
+                                    <button type="button">N</button>
+                                </div>
+                                <div class="control-panel" aria-label="Panel">
+                                    <span class="gold-letter-buttons">
+                                        <button type="button" class="pass-letter" data-letter-index="0">P</button>
+                                        <button type="button" class="pass-letter" data-letter-index="2">A</button>
+                                        <button type="button" class="pass-letter" data-letter-index="4">S</button>
+                                        <button type="button" class="pass-letter" data-letter-index="4">S</button>
+                                    </span>
+                                </div>
+                                <div class="control-code">OFF</div>
+                                <div class="control-keyholes">
+                                    <span id="skinny-keyhole" class="keyhole" aria-hidden="true"></span>
+                                    <span id="big-keyhole" class="keyhole" aria-hidden="true"></span>
+                                    <span class="control-clock-icon" aria-hidden="true"></span>
+                                </div>
+                            </div>
+                            <div class="office-key skinny-key" aria-label="Skinny office key">
+                                <span class="office-key-ring" aria-hidden="true"></span>
+                                <span class="office-key-shaft" aria-hidden="true"></span>
+                                <span class="office-key-tooth tooth-one" aria-hidden="true"></span>
+                                <span class="office-key-tooth tooth-two" aria-hidden="true"></span>
+                            </div>
+                        </div>
+                        <div id="briefcase-lock" class="briefcase-lock">
+                            <button class="lock-digit" type="button" aria-label="First lock digit">0</button>
+                            <button class="lock-digit" type="button" aria-label="Second lock digit">0</button>
+                            <button class="lock-digit" type="button" aria-label="Third lock digit">0</button>
+                            <button class="lock-digit" type="button" aria-label="Fourth lock digit">0</button>
+                            <button id="unlock-button" type="button" aria-label="Unlock">
+                                <span class="unlock-icon" aria-hidden="true">🔓</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="office-key big-key" aria-label="Office key">
+                        <span class="office-key-ring" aria-hidden="true"></span>
+                        <span class="office-key-shaft" aria-hidden="true"></span>
+                        <span class="office-key-tooth tooth-one" aria-hidden="true"></span>
+                        <span class="office-key-tooth tooth-two" aria-hidden="true"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script>
+        const board = document.getElementById("puzzle-board");
+        const piece = document.getElementById("puzzle-piece");
+        const display = document.querySelector(".open-left-display");
+        const displayStatus = document.querySelector(".display-status");
+        const controlDisplay = document.querySelector(".control-display");
+        const controlPanel = document.querySelector(".control-panel");
+        const yesNoButtons = [...document.querySelectorAll(".control-yn button")];
+        const passButtons = [...document.querySelectorAll(".pass-letter")];
+        const passLetters = ["P", "G", "A", "O", "S", "L", "D", "E"];
+        const openCard = document.querySelector(".briefcase-open-card");
+        const screwdriver = document.querySelector(".screwdriver");
+        const mazeDot = document.querySelector(".agent-maze-dot");
+        const mazeImage = new Image();
+        mazeImage.src = "{% static 'game/images/laser-maze.png' %}";
+        const mazeCanvas = document.createElement("canvas");
+        const mazeContext = mazeCanvas.getContext("2d", { willReadFrequently: true });
+        let mazeReady = false;
+        let remotePowerOn = false;
+        let currentPromptId = 0;
+        let cancelResponse = "";
+        let cancelPromptId = 0;
+        const gridColumns = 10;
+        const gridRows = 5;
+        let mazeColumn = 4;
+        let mazeRow = 0;
+        let mazeComplete = false;
+        const endColumn = 5;
+        const endRow = 4;
+
+        mazeImage.addEventListener("load", () => {
+            mazeCanvas.width = mazeImage.naturalWidth;
+            mazeCanvas.height = mazeImage.naturalHeight;
+            mazeContext.drawImage(mazeImage, 0, 0);
+            mazeReady = true;
+        });
+
+        function updateMazeDot() {
+            mazeDot.style.left = `${((mazeColumn + 0.5) / gridColumns) * 100}%`;
+            mazeDot.style.top = `${((mazeRow + 0.5) / gridRows) * 100}%`;
+        }
+
+        function mazeWallAt(x, y) {
+            if (!mazeReady) return false;
+            const pixelX = Math.max(0, Math.min(mazeCanvas.width - 1, Math.round(x * mazeCanvas.width)));
+            const pixelY = Math.max(0, Math.min(mazeCanvas.height - 1, Math.round(y * mazeCanvas.height)));
+            const pixel = mazeContext.getImageData(pixelX, pixelY, 1, 1).data;
+            return pixel[0] < 90 && pixel[1] < 90 && pixel[2] < 90;
+        }
+
+        function pathIsClear(fromColumn, fromRow, toColumn, toRow) {
+            const startX = (fromColumn + 0.5) / gridColumns;
+            const startY = (fromRow + 0.5) / gridRows;
+            const endX = (toColumn + 0.5) / gridColumns;
+            const endY = (toRow + 0.5) / gridRows;
+            for (let index = 1; index < 20; index += 1) {
+                const progress = index / 20;
+                if (mazeWallAt(
+                    startX + (endX - startX) * progress,
+                    startY + (endY - startY) * progress
+                )) return false;
+            }
+            return true;
+        }
+
+        function objectsOverlap(first, second) {
+            const firstRect = first.getBoundingClientRect();
+            const secondRect = second.getBoundingClientRect();
+            return firstRect.left < secondRect.right &&
+                firstRect.right > secondRect.left &&
+                firstRect.top < secondRect.bottom &&
+                firstRect.bottom > secondRect.top;
+        }
+
+        function moveMazeDot(direction) {
+            if (!remotePowerOn || !mazeReady || mazeComplete) return;
+            const nextColumn = mazeColumn + (direction === "left" ? -1 : direction === "right" ? 1 : 0);
+            const nextRow = mazeRow + (direction === "up" ? -1 : direction === "down" ? 1 : 0);
+            if (nextColumn < 0 || nextColumn >= gridColumns || nextRow < 0 || nextRow >= gridRows) return;
+            if (!pathIsClear(mazeColumn, mazeRow, nextColumn, nextRow)) return;
+            mazeColumn = nextColumn;
+            mazeRow = nextRow;
+            updateMazeDot();
+            if (mazeColumn === endColumn && mazeRow === endRow) completeMaze();
+            saveGameState();
+        }
+
+        function completeMaze() {
+            if (mazeComplete) return;
+            mazeComplete = true;
+            moveKeys.forEach((button) => { button.disabled = true; });
+            display.classList.add("maze-complete");
+            bigKey.classList.add("popping");
+            window.setTimeout(() => {
+                bigKey.classList.remove("popping");
+                bigKey.classList.add("revealed");
+            }, 420);
+        }
+
+        const lock = document.getElementById("briefcase-lock");
+        const unlockButton = document.getElementById("unlock-button");
+        const digits = [...document.querySelectorAll(".lock-digit")];
+        const officeKeys = [...document.querySelectorAll(".office-key")];
+        const keyboardScrews = [...document.querySelectorAll(".keyboard-screw")];
+        const computerKeyboard = document.getElementById("computer-keyboard");
+        const keyboardMount = document.querySelector(".keyboard-mount");
+        const keyboardWires = document.getElementById("keyboard-wires");
+        const wireLines = [...keyboardWires.querySelectorAll("i")];
+        const moveKeys = [...document.querySelectorAll("[data-move]")];
+        const bigKey = document.querySelector(".big-key");
+        const skinnyKey = document.querySelector(".skinny-key");
+        const controlCode = document.querySelector(".control-code");
+        const keyholes = {
+            "big-key": document.getElementById("big-keyhole"),
+            "skinny-key": document.getElementById("skinny-keyhole")
+        };
+
+        function updateClockCode() {
+            const shortHandAtEleven = bigKey.classList.contains("inserted") && Number(bigKey.dataset.rotation || 0) === 11;
+            const longHandAtTwentyFive = skinnyKey.classList.contains("inserted") && Number(skinnyKey.dataset.rotation || 0) === 5;
+            const unlockedCode = shortHandAtEleven && longHandAtTwentyFive;
+            controlCode.textContent = unlockedCode ? "3067" : "OFF";
+            controlCode.classList.toggle("active", unlockedCode);
+        }
+
+        passButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                const nextIndex = (Number(button.dataset.letterIndex) + 1) % passLetters.length;
+                button.dataset.letterIndex = String(nextIndex);
+                button.textContent = passLetters[nextIndex];
+                saveGameState();
+            });
+        });
+
+        yesNoButtons.forEach((button) => {
+            button.addEventListener("click", async () => {
+                button.classList.add("pressed");
+                window.setTimeout(() => button.classList.remove("pressed"), 140);
+                if (!currentPromptId) return;
+                cancelPromptId = currentPromptId;
+                cancelResponse = button.textContent === "Y" ? "yes" : "no";
+                await saveGameState();
+                if (cancelResponse === "yes") {
+                    window.location.href = "{% url 'win_page' game_room.code %}";
+                }
+            });
+        });
+        let keyboardLoose = false;
+        let keyboardDragging = false;
+        let keyboardStartPointerX = 0;
+        let keyboardStartPointerY = 0;
+        let keyboardStartLeft = 0;
+        let keyboardStartTop = 0;
+
+        function updateKeyboardWires() {
+            if (!keyboardLoose) return;
+            const cardRect = openCard.getBoundingClientRect();
+            const scaleX = cardRect.width / openCard.offsetWidth;
+            const scaleY = cardRect.height / openCard.offsetHeight;
+            const mountLeft = (keyboardMount.getBoundingClientRect().left - cardRect.left) / scaleX;
+            const mountTop = (keyboardMount.getBoundingClientRect().top - cardRect.top) / scaleY;
+            const mountWidth = keyboardMount.offsetWidth;
+            const mountHeight = keyboardMount.offsetHeight;
+            const keyboardLeft = computerKeyboard.offsetLeft;
+            const keyboardTop = computerKeyboard.offsetTop;
+            const keyboardWidth = computerKeyboard.offsetWidth;
+            const keyboardHeight = computerKeyboard.offsetHeight;
+            const anchors = [
+                [mountLeft + mountWidth * 0.35, mountTop + 22, keyboardLeft + keyboardWidth * 0.35, keyboardTop + 22],
+                [mountLeft + mountWidth * 0.65, mountTop + 22, keyboardLeft + keyboardWidth * 0.65, keyboardTop + 22]
+            ];
+            wireLines.forEach((line, index) => {
+                const [x1, y1, x2, y2] = anchors[index];
+                const deltaX = x2 - x1;
+                const deltaY = y2 - y1;
+                const length = Math.max(4, Math.hypot(deltaX, deltaY));
+                line.style.left = `${x1}px`;
+                line.style.top = `${y1}px`;
+                line.style.width = `${length}px`;
+                line.style.transform = `rotate(${Math.atan2(deltaY, deltaX)}rad)`;
+            });
+        }
+        const correctCode = "1234";
+        const stateUrl = "{% url 'player_state' game_room.code %}?player={{ request.GET.player }}";
+        const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+        async function saveGameState() {
+            await fetch(stateUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken
+                },
+                body: JSON.stringify({
+                    lock_digits: digits.map((digit) => digit.textContent),
+                    briefcase_unlocked: piece.classList.contains("unlocked"),
+                    maze_column: mazeColumn,
+                    maze_row: mazeRow,
+                    maze_complete: mazeComplete,
+                    pass_letters: passButtons.map((button) => button.textContent),
+                    cancel_response: cancelResponse,
+                    cancel_prompt_id: cancelPromptId,
+                    screwdriver_left: screwdriver.style.left,
+                    screwdriver_top: screwdriver.style.top,
+                    removed_screws: keyboardScrews.filter((screw) => screw.classList.contains("removed")).map((screw) => screw.dataset.screw),
+                    keyboard_loose: keyboardLoose,
+                    keyboard_left: computerKeyboard.style.left,
+                    keyboard_top: computerKeyboard.style.top,
+                    office_keys: officeKeys.map((key) => ({
+                        id: key.classList.contains("skinny-key") ? "skinny-key" : "big-key",
+                        left: key.style.left,
+                        top: key.style.top,
+                        inserted: key.classList.contains("inserted"),
+                        rotation: Number(key.dataset.rotation || 0)
+                    }))
+                })
+            });
+        }
+
+        lock.addEventListener("pointerdown", (event) => event.stopPropagation());
+        lock.addEventListener("click", (event) => event.stopPropagation());
+
+        digits.forEach((digit) => {
+            digit.addEventListener("click", () => {
+                digit.textContent = String((Number(digit.textContent) + 1) % 10);
+                saveGameState();
+            });
+        });
+
+        unlockButton.addEventListener("click", () => {
+            const code = digits.map((digit) => digit.textContent).join("");
+            if (code === correctCode) {
+                piece.classList.add("unlocked");
+                unlockButton.classList.add("unlocked");
+                saveGameState();
+            } else {
+                digits.forEach((digit) => digit.classList.add("wrong-code"));
+                setTimeout(() => digits.forEach((digit) => digit.classList.remove("wrong-code")), 500);
+            }
+        });
+
+        officeKeys.forEach((key) => {
+            let dragging = false;
+            let moved = false;
+            let startPointerX = 0;
+            let startPointerY = 0;
+            let startLeft = 0;
+            let startTop = 0;
+
+            key.addEventListener("pointerdown", (event) => {
+                if (key.classList.contains("inserted")) return;
+                event.preventDefault();
+                dragging = true;
+                moved = false;
+                key.setPointerCapture(event.pointerId);
+                const boardRect = board.getBoundingClientRect();
+                const scaleX = boardRect.width / board.offsetWidth;
+                const scaleY = boardRect.height / board.offsetHeight;
+                startPointerX = (event.clientX - boardRect.left) / scaleX;
+                startPointerY = (event.clientY - boardRect.top) / scaleY;
+                startLeft = key.offsetLeft;
+                startTop = key.offsetTop;
+                key.classList.add("dragging");
+            });
+
+            key.addEventListener("pointermove", (event) => {
+                if (!dragging) return;
+                event.preventDefault();
+                const boardRect = board.getBoundingClientRect();
+                const scaleX = boardRect.width / board.offsetWidth;
+                const scaleY = boardRect.height / board.offsetHeight;
+                const pointerX = (event.clientX - boardRect.left) / scaleX;
+                const pointerY = (event.clientY - boardRect.top) / scaleY;
+                const deltaX = pointerX - startPointerX;
+                const deltaY = pointerY - startPointerY;
+                moved = Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3;
+                key.style.left = `${Math.max(0, Math.min(board.offsetWidth - key.offsetWidth, startLeft + deltaX))}px`;
+                key.style.top = `${Math.max(0, Math.min(board.offsetHeight - key.offsetHeight, startTop + deltaY))}px`;
+            });
+
+            key.addEventListener("pointerup", () => {
+                if (!dragging) return;
+                dragging = false;
+                key.classList.remove("dragging");
+                const target = keyholes[key.classList.contains("skinny-key") ? "skinny-key" : "big-key"];
+                if (target && objectsOverlap(key, target)) {
+                    key.classList.add("inserted");
+                    const targetRect = target.getBoundingClientRect();
+                    const parentRect = key.offsetParent.getBoundingClientRect();
+                    const scaleX = parentRect.width / key.offsetParent.offsetWidth;
+                    const scaleY = parentRect.height / key.offsetParent.offsetHeight;
+                    key.style.left = `${(targetRect.left - parentRect.left) / scaleX + (targetRect.width / scaleX - key.offsetWidth) / 2}px`;
+                    key.style.top = `${(targetRect.top - parentRect.top) / scaleY + (targetRect.height / scaleY - key.offsetHeight) / 2}px`;
+                    key.dataset.rotation = "0";
+                    key.style.transform = "rotate(0deg)";
+                    key.dataset.justInserted = "true";
+                    window.setTimeout(() => delete key.dataset.justInserted, 0);
+                }
+                updateClockCode();
+                saveGameState();
+            });
+
+            key.addEventListener("click", () => {
+                if (!key.classList.contains("inserted") || key.dataset.justInserted) return;
+                const rotation = (Number(key.dataset.rotation || 0) + 1) % 12;
+                key.dataset.rotation = String(rotation);
+                const baseRotation = 0;
+                key.style.transform = `rotate(${baseRotation + rotation * 30}deg)`;
+                    updateClockCode();
+                saveGameState();
+            });
+        });
+
+        let screwdriverDragging = false;
+        let screwdriverStartPointerX = 0;
+        let screwdriverStartPointerY = 0;
+        let screwdriverStartLeft = 0;
+        let screwdriverStartTop = 0;
+
+        screwdriver.addEventListener("pointerdown", (event) => {
+            if (!piece.classList.contains("unlocked")) return;
+            event.preventDefault();
+            event.stopPropagation();
+            screwdriverDragging = true;
+            screwdriver.setPointerCapture(event.pointerId);
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            screwdriverStartPointerX = (event.clientX - boardRect.left) / scaleX;
+            screwdriverStartPointerY = (event.clientY - boardRect.top) / scaleY;
+            screwdriverStartLeft = screwdriver.offsetLeft;
+            screwdriverStartTop = screwdriver.offsetTop;
+            screwdriver.classList.add("dragging");
+        });
+
+        screwdriver.addEventListener("pointermove", (event) => {
+            if (!screwdriverDragging) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            const pointerX = (event.clientX - boardRect.left) / scaleX;
+            const pointerY = (event.clientY - boardRect.top) / scaleY;
+            const cardRect = openCard.getBoundingClientRect();
+            const cardLeft = (cardRect.left - boardRect.left) / scaleX;
+            const cardTop = (cardRect.top - boardRect.top) / scaleY;
+            const nextLeft = screwdriverStartLeft + pointerX - screwdriverStartPointerX;
+            const nextTop = screwdriverStartTop + pointerY - screwdriverStartPointerY;
+            const minLeft = -cardLeft;
+            const minTop = -cardTop;
+            const maxLeft = board.offsetWidth - cardLeft - screwdriver.offsetWidth;
+            const maxTop = board.offsetHeight - cardTop - screwdriver.offsetHeight;
+            screwdriver.style.left = `${Math.max(minLeft, Math.min(maxLeft, nextLeft))}px`;
+            screwdriver.style.top = `${Math.max(minTop, Math.min(maxTop, nextTop))}px`;
+        });
+
+        screwdriver.addEventListener("pointerup", () => {
+            if (!screwdriverDragging) return;
+            screwdriverDragging = false;
+            screwdriver.classList.remove("dragging");
+            keyboardScrews.forEach((screw) => {
+                if (!screw.classList.contains("removed") && objectsOverlap(screwdriver, screw)) {
+                    screw.classList.add("removed");
+                }
+            });
+            if (keyboardScrews.every((screw) => screw.classList.contains("removed"))) {
+                keyboardLoose = true;
+                computerKeyboard.classList.add("keyboard-loose");
+                skinnyKey.classList.add("revealed");
+                keyboardWires.classList.add("visible");
+                updateKeyboardWires();
+            }
+            saveGameState();
+        });
+
+        computerKeyboard.addEventListener("pointerdown", (event) => {
+            if (!keyboardLoose || event.target.closest("button")) return;
+            event.preventDefault();
+            keyboardDragging = true;
+            computerKeyboard.setPointerCapture(event.pointerId);
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            keyboardStartPointerX = (event.clientX - boardRect.left) / scaleX;
+            keyboardStartPointerY = (event.clientY - boardRect.top) / scaleY;
+            keyboardStartLeft = computerKeyboard.offsetLeft;
+            keyboardStartTop = computerKeyboard.offsetTop;
+            computerKeyboard.classList.add("dragging");
+        });
+
+        computerKeyboard.addEventListener("pointermove", (event) => {
+            if (!keyboardDragging) return;
+            event.preventDefault();
+            const boardRect = board.getBoundingClientRect();
+            const scaleX = boardRect.width / board.offsetWidth;
+            const scaleY = boardRect.height / board.offsetHeight;
+            const pointerX = (event.clientX - boardRect.left) / scaleX;
+            const pointerY = (event.clientY - boardRect.top) / scaleY;
+            const cardRect = openCard.getBoundingClientRect();
+            const cardLeft = (cardRect.left - boardRect.left) / scaleX;
+            const cardTop = (cardRect.top - boardRect.top) / scaleY;
+            const nextLeft = keyboardStartLeft + pointerX - keyboardStartPointerX;
+            const nextTop = keyboardStartTop + pointerY - keyboardStartPointerY;
+            const minLeft = -cardLeft;
+            const minTop = -cardTop;
+            const maxLeft = board.offsetWidth - cardLeft - computerKeyboard.offsetWidth;
+            const maxTop = board.offsetHeight - cardTop - computerKeyboard.offsetHeight;
+            computerKeyboard.style.left = `${Math.max(minLeft, Math.min(maxLeft, nextLeft))}px`;
+            computerKeyboard.style.top = `${Math.max(minTop, Math.min(maxTop, nextTop))}px`;
+            updateKeyboardWires();
+        });
+
+        computerKeyboard.addEventListener("pointerup", () => {
+            if (!keyboardDragging) return;
+            keyboardDragging = false;
+            computerKeyboard.classList.remove("dragging");
+            updateKeyboardWires();
+            saveGameState();
+        });
+
+        async function loadGameState() {
+            const response = await fetch(stateUrl);
+            const data = await response.json();
+            const state = data.state || {};
+            remotePowerOn = Boolean(data.shared_state?.remote_power_on);
+            const remoteCode = String(data.shared_state?.remote_code || "").trim();
+            const cancelProjectPrompt = Boolean(data.shared_state?.remote_gray_pressed);
+            currentPromptId = Number(data.shared_state?.remote_gray_prompt_id || 0);
+            if (state.cancel_prompt_id !== currentPromptId) {
+                cancelResponse = "";
+                cancelPromptId = 0;
+            } else {
+                cancelResponse = state.cancel_response || "";
+                cancelPromptId = Number(state.cancel_prompt_id || 0);
+            }
+            displayStatus.textContent = remotePowerOn ? "" : "OFF";
+            const showCancelPrompt = cancelProjectPrompt && cancelPromptId !== currentPromptId;
+            controlDisplay.textContent = showCancelPrompt ? "Do you want to cancel project GOLD? y/n" : "";
+            controlDisplay.classList.toggle("cancel-prompt", showCancelPrompt);
+            if (cancelResponse === "yes" && cancelPromptId === currentPromptId) {
+                window.location.href = "{% url 'win_page' game_room.code %}";
+                return;
+            }
+            display.classList.toggle("powered-on", remotePowerOn);
+            display.classList.toggle("maze-active", remotePowerOn);
+            controlPanel.classList.toggle("gold-code-visible", remoteCode === "3067");
+            if (Array.isArray(state.pass_letters) && state.pass_letters.length === passButtons.length) {
+                passButtons.forEach((button, index) => {
+                    const letter = String(state.pass_letters[index] || "P");
+                    const letterIndex = passLetters.indexOf(letter);
+                    button.dataset.letterIndex = String(letterIndex >= 0 ? letterIndex : 0);
+                    button.textContent = passLetters[letterIndex >= 0 ? letterIndex : 0];
+                });
+            }
+            if (Array.isArray(state.lock_digits) && state.lock_digits.length === 4) {
+                digits.forEach((digit, index) => {
+                    digit.textContent = state.lock_digits[index];
+                });
+            }
+            if (state.briefcase_unlocked) {
+                piece.classList.add("unlocked");
+                unlockButton.classList.add("unlocked");
+            }
+            if (Number.isInteger(state.maze_column) && state.maze_column >= 0 && state.maze_column < gridColumns) {
+                mazeColumn = state.maze_column;
+            }
+            if (Number.isInteger(state.maze_row) && state.maze_row >= 0 && state.maze_row < gridRows) {
+                mazeRow = state.maze_row;
+            }
+            updateMazeDot();
+            if (state.maze_complete) completeMaze();
+            if (state.screwdriver_left) screwdriver.style.left = state.screwdriver_left;
+            if (state.screwdriver_top) screwdriver.style.top = state.screwdriver_top;
+            (state.removed_screws || []).forEach((screwId) => {
+                const screw = keyboardScrews.find((item) => item.dataset.screw === screwId);
+                if (screw) screw.classList.add("removed");
+            });
+            if (state.keyboard_loose || keyboardScrews.every((screw) => screw.classList.contains("removed"))) {
+                keyboardLoose = true;
+                computerKeyboard.classList.add("keyboard-loose");
+                skinnyKey.classList.add("revealed");
+                keyboardWires.classList.add("visible");
+            }
+            if (state.keyboard_left) computerKeyboard.style.left = state.keyboard_left;
+            if (state.keyboard_top) computerKeyboard.style.top = state.keyboard_top;
+            updateKeyboardWires();
+            (state.office_keys || []).forEach((savedKey, index) => {
+                const key = officeKeys.find((item) => (
+                    item.classList.contains("skinny-key") ? "skinny-key" : "big-key"
+                ) === savedKey.id) || officeKeys[index];
+                if (!key) return;
+                if (savedKey.left) key.style.left = savedKey.left;
+                if (savedKey.top) key.style.top = savedKey.top;
+                if (savedKey.inserted) key.classList.add("inserted");
+                if (Number.isInteger(savedKey.rotation)) {
+                    key.dataset.rotation = String(savedKey.rotation);
+                    const baseRotation = savedKey.inserted ? 0 : (key.classList.contains("skinny-key") ? 10 : -12);
+                    key.style.transform = `rotate(${baseRotation + savedKey.rotation * 30}deg)`;
+                }
+            });
+            updateClockCode();
+        }
+
+        moveKeys.forEach((button) => {
+            button.addEventListener("click", () => moveMazeDot(button.dataset.move));
+        });
+
+        updateMazeDot();
+
+        loadGameState();
+        window.setInterval(loadGameState, 700);
+    </script>
+    <script>
+        function fitPageToViewport() {
+            const page = document.querySelector(".fit-page");
+            const playSpace = document.querySelector(".play-space");
+            const playContent = document.querySelector(".play-content");
+            page.style.transform = "scale(1)";
+            const scale = Math.min(window.innerWidth / page.scrollWidth, window.innerHeight / page.scrollHeight, 1.15);
+            page.style.transform = `scale(${Math.max(scale, 0.65)})`;
+            playContent.style.setProperty(
+                "--play-scale",
+                Math.min(playSpace.clientWidth / 960, playSpace.clientHeight / 540)
+            );
+        }
+        window.addEventListener("resize", fitPageToViewport);
+        fitPageToViewport();
+    </script>
+</body>
+</html>
