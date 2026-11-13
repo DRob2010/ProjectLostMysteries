@@ -37,5 +37,5 @@ I found these websites useful in developing this software:
 The following items I plan to fix, improve, and/or add to this project in the future:
 
 * [ ] Include more story elements such as an intro
-* [ ] 
+* [ ] A lot of bug fixes
 * [ ]
