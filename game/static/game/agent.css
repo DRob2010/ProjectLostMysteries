@@ -1,0 +1,973 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    margin: 0;
+    min-height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    background: #400118;
+    color: #B88D41;
+}
+
+.fit-page {
+    transform-origin: center center;
+}
+
+.role-page {
+    width: min(
+        calc(100vw - 200px),
+        calc((100vh - 200px) * 16 / 9)
+    );
+    aspect-ratio: 16 / 9;
+    text-align: center;
+}
+
+.play-space {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: clamp(28px, 5vw, 64px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #731440;
+    border: 4px solid #986C19;
+    border-radius: 8px;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.24);
+    overflow: hidden;
+}
+
+.play-content {
+    --play-scale: 1;
+    position: relative;
+    width: 960px;
+    height: 540px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    transform: scale(var(--play-scale));
+    transform-origin: center center;
+}
+
+.puzzle-board {
+    position: relative;
+    position: absolute;
+    inset: 0;
+    width: auto;
+    height: auto;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.play-content > *:not(.puzzle-board) {
+    position: relative;
+    z-index: -1;
+}
+
+.interactable {
+    touch-action: none;
+    user-select: none;
+    cursor: default;
+    -webkit-user-drag: none;
+}
+
+.puzzle-piece {
+    position: absolute;
+    left: 40px;
+    top: 40px;
+    padding: 18px 24px;
+    border: 3px solid #B88D41;
+    border-radius: 8px;
+    background: #986C19;
+    color: #400118;
+    font-weight: bold;
+    cursor: default;
+    pointer-events: auto;
+}
+
+.puzzle-piece.dragging {
+    cursor: default;
+    opacity: 0.8;
+}
+
+.briefcase-object {
+    position: absolute;
+    left: 200px;
+    top: -50px;
+    width: 550px;
+    height: 620px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: default;
+    z-index: 6;
+    pointer-events: auto;
+}
+
+.briefcase-closed {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 25%;
+    height: 60%;
+    transform: translate(-50%, -50%);
+    border: 6px solid #858B92;
+    border-radius: 18px;
+    background: linear-gradient(145deg, #d8dce0 0%, #9ba1a7 48%, #6f767d 100%);
+    box-shadow: inset 0 0 0 5px #6f767d, inset 0 0 0 9px #c9cdd1, 0 14px 26px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+}
+
+.briefcase-corner {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border: 5px solid #383838;
+    border-radius: 50%;
+    background: #bfc4c8;
+}
+
+.corner-top-left { left: 18px; top: 18px; }
+.corner-top-right { right: 18px; top: 18px; }
+.corner-bottom-left { left: 18px; bottom: 18px; }
+.corner-bottom-right { right: 18px; bottom: 18px; }
+
+.briefcase-open-card {
+    display: none;
+    position: absolute;
+    left: 50%;
+    top: 20%;
+    width: 600px;
+    height: 60%;
+    transform: translateX(-50%);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    pointer-events: none;
+}
+
+.briefcase-open-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: calc(50% - 6px);
+    height: 100%;
+    border: 4px solid #858B92;
+    border-radius: 14px;
+    background: #383838;
+    box-shadow: inset 0 0 0 3px #6f767d, 0 10px 22px rgba(0, 0, 0, 0.35);
+}
+
+.briefcase-open-card::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: calc(50% - 6px);
+    height: 100%;
+    border: 4px solid #858B92;
+    border-radius: 14px;
+    background: #383838;
+    box-shadow: inset 0 0 0 3px #6f767d, 0 10px 22px rgba(0, 0, 0, 0.35);
+}
+
+.open-left-display {
+    position: absolute;
+    left: 24px;
+    top: 24px;
+    z-index: 4;
+    width: calc(50% - 48px);
+    height: 38%;
+    display: grid;
+    place-items: center;
+    border: 5px solid #6f767d;
+    z-index: 1;
+    border-radius: 8px;
+    background: #111111;
+    color: #4b5563;
+    font: 700 1rem/1 monospace;
+    letter-spacing: 2px;
+    box-shadow: inset 0 0 0 3px #252525, 0 4px 8px rgba(0, 0, 0, 0.35);
+}
+
+.open-left-display.powered-on {
+    background: #b8d7bd;
+    color: #17351d;
+    box-shadow: inset 0 0 0 3px #5e8867, 0 0 12px rgba(143, 220, 155, 0.55);
+}
+
+.agent-maze {
+    display: none;
+    position: absolute;
+    inset: 8px;
+    overflow: hidden;
+    z-index: 0;
+}
+
+.open-left-display.maze-active .agent-maze {
+    display: block;
+}
+
+.open-left-display.maze-active .agent-maze {
+    background-image:
+        linear-gradient(to right, rgba(23, 53, 29, 0.2) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(23, 53, 29, 0.2) 1px, transparent 1px);
+    background-size: 10% 100%, 100% 20%;
+}
+
+.agent-maze-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    transform: translate(-50%, -50%);
+    border: 2px solid #5e8867;
+    border-radius: 50%;
+    background: #b8d7bd;
+}
+
+.open-left-keyboard {
+    position: absolute;
+    left: 24px;
+    bottom: 24px;
+    z-index: 4;
+    width: calc(50% - 48px);
+    height: 38%;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 5px;
+    padding: 9px;
+    border: 4px solid #6f767d;
+    border-radius: 8px;
+    background: #4b5157;
+    box-shadow: inset 0 0 0 3px #252525, 0 4px 8px rgba(0, 0, 0, 0.35);
+    pointer-events: auto;
+    z-index: 3;
+}
+
+.keyboard-mount {
+    position: absolute;
+    left: 24px;
+    bottom: 24px;
+    z-index: 0;
+    width: calc(50% - 48px);
+    height: 38%;
+    border: 4px solid #6f767d;
+    border-radius: 8px;
+    background-color: #4b5157;
+    background-image:
+        linear-gradient(#9aa1a6 2px, transparent 2px),
+        linear-gradient(90deg, #9aa1a6 2px, transparent 2px);
+    background-size: 24px 22px;
+    box-shadow: inset 0 0 0 3px #252525, 0 4px 8px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+.keyboard-wires {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.keyboard-wires.visible {
+    display: block;
+}
+
+.keyboard-wires i {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 5px;
+    border-radius: 5px;
+    background: #252a2e;
+    box-shadow: 0 1px 0 #6b7280;
+    transform-origin: left center;
+}
+
+.open-left-keyboard > button {
+    position: relative;
+    z-index: 1;
+}
+
+.open-left-keyboard.keyboard-loose {
+    cursor: grab;
+}
+
+.open-left-keyboard.keyboard-loose.dragging {
+    cursor: grabbing;
+    opacity: 0.85;
+}
+
+.keyboard-screw {
+    position: absolute;
+    z-index: 5;
+    width: 9px;
+    height: 9px;
+    border: 2px solid #374151;
+    border-radius: 50%;
+    background: #9ca3af;
+    box-shadow: inset 1px 1px 1px rgba(255, 255, 255, 0.8), 1px 1px 2px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+}
+
+.keyboard-screw::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    background:
+        linear-gradient(45deg, transparent 42%, #374151 43%, #374151 57%, transparent 58%),
+        linear-gradient(-45deg, transparent 42%, #374151 43%, #374151 57%, transparent 58%);
+    transform: translate(-50%, -50%);
+}
+
+.screw-top-left { left: 3px; top: 3px; }
+.screw-top-right { right: 3px; top: 3px; }
+.screw-bottom-left { left: 3px; bottom: 3px; }
+.screw-bottom-right { right: 3px; bottom: 3px; }
+
+.keyboard-screw.removed {
+    opacity: 0;
+    transform: translateY(-8px) rotate(90deg);
+}
+
+.open-left-keyboard span {
+    display: grid;
+    min-width: 0;
+    place-items: center;
+    border: 2px solid #8b9298;
+    border-radius: 3px;
+    background: #d1d5d8;
+    color: #252525;
+    font: 700 0.62rem/1 sans-serif;
+}
+
+.open-left-keyboard button.move-key {
+    display: grid;
+    min-width: 0;
+    place-items: center;
+    border: 2px solid #8b9298;
+    border-radius: 3px;
+    background: #d1d5d8;
+    color: #252525;
+    font: 700 0.85rem/1 sans-serif;
+    cursor: pointer;
+}
+
+.open-left-keyboard button.keyboard-key {
+    display: grid;
+    min-width: 0;
+    place-items: center;
+    border: 2px solid #8b9298;
+    border-radius: 3px;
+    background: #d1d5d8;
+    color: #252525;
+    font: 700 0.62rem/1 sans-serif;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.open-left-keyboard button.keyboard-key:active,
+.open-left-keyboard button.move-key:active {
+    transform: translateY(2px);
+    background: #9ca3a7;
+}
+
+.open-left-keyboard button.move-key:disabled {
+    opacity: 1;
+    background: #d1d5d8;
+    color: #252525;
+    cursor: pointer;
+    filter: none;
+}
+
+.move-up { grid-column: 2; grid-row: 1; }
+.move-left { grid-column: 1; grid-row: 2; }
+.move-down { grid-column: 2; grid-row: 2; }
+.move-right { grid-column: 3; grid-row: 2; }
+
+.open-left-keyboard .keyboard-space {
+    grid-column: 2 / span 4;
+    font-size: 0.48rem;
+}
+
+.briefcase-lock {
+    position: absolute;
+    left: 51.5%;
+    top: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 8px;
+    transform: translate(-50%, -50%);
+    border: 3px solid #986C19;
+    border-radius: 8px;
+    background: #400118;
+    z-index: 2;
+}
+
+.briefcase-lock::before {
+    content: "";
+    position: absolute;
+    left: auto;
+    right: -125px;
+    top: 50%;
+    width: 200px;
+    height: 25px;
+    transform: translateY(-50%) rotate(90deg);
+    border: 4px solid #858B92;
+    border-bottom: 0;
+    border-radius: 12px 12px 0 0;
+    background: #383838;
+    box-shadow: inset 0 0 0 3px #6f767d;
+    z-index: 0;
+}
+
+.lock-digit {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 36px;
+    border: 2px solid #B88D41;
+    border-radius: 2px;
+    background: #ffffff;
+    color: #400118;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+}
+
+.briefcase-lock > #unlock-button {
+    position: relative;
+    z-index: 1;
+    width: 34px;
+    height: 34px;
+    padding: 3px;
+    border: 0;
+    border-radius: 4px;
+    background: #986C19;
+    color: #400118;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.unlock-icon {
+    display: block;
+    color: transparent;
+    font-family: "Segoe UI Symbol", "Arial Unicode MS", sans-serif;
+    font-size: 1.35rem;
+    line-height: 1;
+    -webkit-text-stroke: 1px #B88D41;
+}
+
+.lock-digit.wrong-code {
+    border-color: #B91C1C;
+    background: #FECACA;
+}
+
+.briefcase-object.unlocked .briefcase-lock {
+    display: none;
+}
+
+.briefcase-object.unlocked .briefcase-closed {
+    display: none;
+}
+
+.briefcase-object.unlocked .briefcase-open-card {
+    display: block;
+}
+
+.right-case-controls {
+    position: absolute;
+    right: 24px;
+    top: 24px;
+    z-index: 1;
+    width: calc(50% - 48px);
+    height: calc(100% - 48px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.control-time,
+.control-code {
+    display: grid;
+    width: 112px;
+    height: 30px;
+    place-items: center;
+    border: 4px solid #6f767d;
+    border-radius: 7px;
+    font: 700 1rem/1 monospace;
+    letter-spacing: 2px;
+    background: #b8d7bd;
+    color: #17351d;
+    box-shadow: inset 0 0 0 3px #5e8867, 0 0 12px rgba(143, 220, 155, 0.55);
+    
+}
+
+.control-display {
+    width: 100%;
+    height: 48px;
+    border: 4px solid #6f767d;
+    border-radius: 6px;
+    background: #303030;
+    box-shadow: inset 0 0 0 3px #252525;
+}
+
+.control-display.cancel-prompt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    background: #b8d7bd;
+    color: #17351d;
+    box-shadow: inset 0 0 0 3px #5e8867, 0 0 12px rgba(143, 220, 155, 0.55);
+    font: 700 0.75rem/1.1 sans-serif;
+    text-align: center;
+}
+
+.control-yn {
+    display: flex;
+    gap: 22px;
+}
+
+.control-yn button {
+    width: 48px;
+    height: 35px;
+    padding: 0;
+    border: 4px solid #6f767d;
+    border-radius: 5px;
+    background: #d1d5d8;
+    color: #252525;
+    font: 700 1rem/1 sans-serif;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.control-yn button:active,
+.control-yn button.pressed {
+    transform: translateY(2px);
+    background: #9ca3a7;
+    box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.control-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 70px;
+    padding: 0;
+    border: 4px solid #6f767d;
+    border-radius: 8px;
+    background: linear-gradient(145deg, #4b5157, #252a2e);
+    color: #d1d5d8;
+    font: 700 0.8rem/1 sans-serif;
+    box-shadow: inset 0 0 0 3px #383838, 0 4px 8px rgba(0, 0, 0, 0.35);
+}
+
+.control-panel.gold-code-visible {
+    display: flex;
+    padding: 10px;
+}
+
+.gold-letter-buttons {
+    display: none;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    width: 75%;
+    align-self: center;
+}
+
+.control-panel.gold-code-visible .gold-letter-buttons {
+    display: grid;
+}
+
+.gold-letter-buttons button.pass-letter {
+    display: grid;
+    min-width: 0;
+    place-items: center;
+    height: 26px;
+    border: 2px solid #8b9298;
+    border-radius: 3px;
+    background: #d1d5d8;
+    color: #252a2e;
+    font: 700 1rem/1 sans-serif;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.gold-letter-buttons button.pass-letter:active {
+    transform: translateY(2px);
+    background: #9ca3a7;
+}
+
+.control-code {
+    width: 128px;
+    height: 28px;
+    color: #8f969c;
+}
+
+.control-code.active {
+    background: #b8d7bd;
+    color: #17351d;
+    box-shadow: inset 0 0 0 3px #5e8867, 0 0 12px rgba(143, 220, 155, 0.55);
+}
+
+.control-keyholes {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: auto;
+}
+
+.keyhole {
+    position: relative;
+    display: block;
+    width: 28px;
+    height: 22px;
+    border: 3px solid #252a2e;
+    border-radius: 8px 8px 6px 6px;
+    background: #9ca3a7;
+}
+
+.keyhole::before {
+    display: none;
+}
+
+.keyhole::after {
+    content: "";
+    position: absolute;
+    width: 4px;
+    height: 10px;
+    background: #252a2e;
+    transform: translateX(-50%);
+}
+
+.keyhole:first-child {
+    width: 18px;
+    height: 28px;
+    border-radius: 6px;
+}
+
+.keyhole:first-child::before {
+    display: none;
+}
+
+.keyhole:first-child::after {
+    left: 50%;
+}
+
+.keyhole:nth-child(2)::before {
+    display: none;
+}
+
+.control-clock-icon {
+    position: relative;
+    display: block;
+    width: 34px;
+    height: 34px;
+    border: 4px solid #6f767d;
+    border-radius: 50%;
+    background: #d1d5d8;
+}
+
+.control-clock-icon::before,
+.control-clock-icon::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 3px;
+    border-radius: 3px;
+    background: #252a2e;
+    transform-origin: top center;
+}
+
+.control-clock-icon::before {
+    height: 11px;
+    transform: translate(-50%, -1px) rotate(25deg);
+}
+
+.control-clock-icon::after {
+    height: 8px;
+    transform: translate(-50%, -1px) rotate(140deg);
+}
+
+.screwdriver {
+    display: none;
+    position: absolute;
+    left: 480px;
+    top: 150px;
+    width: 150px;
+    height: 42px;
+    transform: rotate(90deg);
+    pointer-events: auto;
+    z-index: 7;
+}
+
+.screwdriver.dragging {
+    opacity: 0.8;
+}
+
+.briefcase-object.unlocked .screwdriver {
+    display: block;
+}
+
+.screwdriver-handle {
+    position: absolute;
+    left: 0;
+    top: 5px;
+    width: 58px;
+    height: 32px;
+    border: 3px solid #263238;
+    border-radius: 8px 14px 14px 8px;
+    background: linear-gradient(180deg, #d64b3f 0%, #8f211c 100%);
+    box-shadow: inset 4px 2px 4px rgba(255, 255, 255, 0.2), 3px 4px 6px rgba(0, 0, 0, 0.35);
+}
+
+.screwdriver-shaft {
+    position: absolute;
+    left: 56px;
+    top: 16px;
+    width: 84px;
+    height: 10px;
+    border: 2px solid #374151;
+    background: linear-gradient(180deg, #f3f4f6 0%, #9ca3af 50%, #4b5563 100%);
+    box-shadow: 2px 3px 4px rgba(0, 0, 0, 0.3);
+}
+
+.screwdriver-tip {
+    position: absolute;
+    right: 0;
+    top: 16px;
+    width: 14px;
+    height: 10px;
+    border-top: 2px solid #374151;
+    border-right: 2px solid #374151;
+    border-bottom: 2px solid #374151;
+    background: #6b7280;
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.office-key {
+    position: absolute;
+    left: 785px;
+    top: 95px;
+    width: 118px;
+    height: 52px;
+    transform: rotate(-12deg);
+    pointer-events: auto;
+    display: block;
+    visibility: visible;
+    opacity: 1;
+    z-index: 20;
+}
+
+.office-key.dragging {
+    opacity: 0.8;
+}
+
+.office-key.inserted {
+    width: 28px;
+    height: 22px;
+}
+
+.office-key.inserted::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 3px solid #252a2e;
+    border-radius: 5px;
+    background: linear-gradient(145deg, #f3f4f6, #9ca3af 60%, #4b5563);
+    box-shadow: inset 0 0 0 2px #d1d5d8, 1px 2px 3px rgba(0, 0, 0, 0.35);
+}
+
+.office-key.inserted::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 3px;
+    height: 8px;
+    border-radius: 3px;
+    background: #252a2e;
+    transform: translate(-50%, -100%) rotate(0deg);
+    transform-origin: bottom center;
+    z-index: 1;
+}
+
+.office-key.inserted .office-key-ring,
+.office-key.inserted .office-key-shaft,
+.office-key.inserted .office-key-tooth {
+    visibility: hidden;
+}
+
+.office-key.skinny-key.inserted {
+    width: 18px;
+    height: 28px;
+}
+
+.office-key.skinny-key.inserted::after {
+    height: 15px;
+    transform: translate(-50%, -100%) rotate(0deg);
+}
+
+.big-key {
+    z-index: 5;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(28px) rotate(-12deg);
+}
+
+.big-key.revealed {
+    left: 205px;
+    top: 75px;
+    z-index: 20;
+    opacity: 1;
+    pointer-events: auto;
+    transform: rotate(-12deg);
+    animation: office-key-pop 420ms ease-out;
+}
+
+.big-key.popping {
+    left: 205px;
+    top: 75px;
+    z-index: 7;
+    display: block;
+    opacity: 1;
+    pointer-events: none;
+    transform: translateY(55px) scale(0.82) rotate(-12deg);
+    animation: office-key-emerge 420ms ease-out forwards;
+}
+
+@keyframes office-key-emerge {
+    from { transform: translateY(55px) scale(0.82) rotate(-12deg); }
+    to { transform: translateY(0) scale(1) rotate(-12deg); }
+}
+
+@keyframes office-key-pop {
+    from { opacity: 0; transform: translateY(28px) rotate(-12deg); }
+    to { opacity: 1; transform: rotate(-12deg); }
+}
+
+.office-key-ring {
+    position: absolute;
+    left: 0;
+    top: 5px;
+    width: 42px;
+    height: 38px;
+    border: 3px solid #374151;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #f3f4f6 0%, #9ca3af 55%, #4b5563 100%);
+    box-shadow: inset 0 0 0 3px #d1d5db, 2px 3px 4px rgba(0, 0, 0, 0.35);
+}
+
+.office-key-ring::after {
+    content: "";
+    position: absolute;
+    left: 13px;
+    top: 10px;
+    width: 12px;
+    height: 12px;
+    border: 3px solid #374151;
+    border-radius: 50%;
+    background: #252a2e;
+}
+
+.office-key-shaft {
+    position: absolute;
+    left: 42px;
+    top: 20px;
+    width: 70px;
+    height: 10px;
+    border: 2px solid #374151;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #e5e7eb 0%, #6b7280 100%);
+    box-shadow: 2px 3px 4px rgba(0, 0, 0, 0.3);
+}
+
+.office-key-tooth {
+    position: absolute;
+    top: 27px;
+    width: 10px;
+    height: 15px;
+    border: 2px solid #374151;
+    border-top: 0;
+    background: #9ca3af;
+}
+
+.tooth-one { right: 26px; }
+.tooth-two { right: 8px; height: 20px; }
+
+.skinny-key {
+    display: none;
+    top: 170px;
+    transform: rotate(10deg);
+}
+
+.skinny-key.revealed {
+    display: block;
+    left: 74px;
+    top: 257px;
+    z-index: 2;
+    animation: skinny-key-pop 360ms ease-out;
+}
+
+@keyframes skinny-key-pop {
+    from { opacity: 0; transform: translateY(-20px) rotate(10deg); }
+    to { opacity: 1; transform: rotate(10deg); }
+}
+
+.skinny-key .office-key-ring {
+    width: 25px;
+    height: 38px;
+    border-radius: 7px;
+}
+
+.skinny-key .office-key-ring::after {
+    left: 7px;
+    top: 10px;
+    width: 7px;
+    height: 14px;
+    border-radius: 4px;
+}
+
+.skinny-key .office-key-shaft {
+    left: 23px;
+    width: 85px;
+}
+
+.skinny-key .tooth-one { right: 31px; }
+.skinny-key .tooth-two { right: 13px; }

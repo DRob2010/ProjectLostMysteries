@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Agent Role</title>
-    <link rel="stylesheet" href="{% static 'game/style.css' %}">
+    <link rel="stylesheet" href="{% static 'game/agent.css' %}">
 </head>
 <body>
     <main class="fit-page role-page">
@@ -62,7 +62,7 @@
                                 <span class="screwdriver-tip" aria-hidden="true"></span>
                             </div>
                             <div class="right-case-controls" aria-label="Briefcase control panel">
-                                <div class="control-time">15:00</div>
+                                <div class="control-time">20:00</div>
                                 <div class="control-display" aria-label="Display"></div>
                                 <div class="control-yn">
                                     <button type="button">Y</button>
@@ -116,6 +116,7 @@
         const display = document.querySelector(".open-left-display");
         const displayStatus = document.querySelector(".display-status");
         const controlDisplay = document.querySelector(".control-display");
+        const controlTime = document.querySelector(".control-time");
         const controlPanel = document.querySelector(".control-panel");
         const yesNoButtons = [...document.querySelectorAll(".control-yn button")];
         const passButtons = [...document.querySelectorAll(".pass-letter")];
@@ -139,6 +140,17 @@
         let mazeComplete = false;
         const endColumn = 5;
         const endRow = 4;
+        let remainingSeconds = 20 * 60;
+
+        function updateControlTime() {
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+            controlTime.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+            if (remainingSeconds > 0) remainingSeconds -= 1;
+        }
+
+        updateControlTime();
+        window.setInterval(updateControlTime, 1000);
 
         mazeImage.addEventListener("load", () => {
             mazeCanvas.width = mazeImage.naturalWidth;

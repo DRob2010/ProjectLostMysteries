@@ -527,11 +527,12 @@ body {
     place-items: center;
     border: 4px solid #6f767d;
     border-radius: 7px;
-    background: #383838;
-    color: #d1d5d8;
     font: 700 1rem/1 monospace;
     letter-spacing: 2px;
-    box-shadow: inset 0 0 0 2px #252525;
+    background: #b8d7bd;
+    color: #17351d;
+    box-shadow: inset 0 0 0 3px #5e8867, 0 0 12px rgba(143, 220, 155, 0.55);
+    
 }
 
 .control-display {
