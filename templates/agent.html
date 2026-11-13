@@ -143,10 +143,14 @@
         let pendingMazeSaves = 0;
         let remainingSeconds = 20 * 60;
 
-        function updateControlTime() {
+        function renderControlTime() {
             const minutes = Math.floor(remainingSeconds / 60);
             const seconds = remainingSeconds % 60;
             controlTime.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+        }
+
+        function updateControlTime() {
+            renderControlTime();
             if (remainingSeconds > 0) remainingSeconds -= 1;
         }
 
@@ -313,9 +317,25 @@
         const correctCode = "1234";
         const stateUrl = "{% url 'player_state' game_room.code %}?player={{ request.GET.player }}";
         const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+        let pendingStateSaves = 0;
+        let localStateVersion = 0;
+        let localInteractionActive = false;
+
+        document.addEventListener("pointerdown", (event) => {
+            if (event.target.closest(".interactable, button")) localInteractionActive = true;
+        });
+        document.addEventListener("pointerup", () => {
+            window.setTimeout(() => { localInteractionActive = false; }, 120);
+        });
+        document.addEventListener("pointercancel", () => {
+            localInteractionActive = false;
+        });
 
         async function saveGameState() {
-            await fetch(stateUrl, {
+            localStateVersion += 1;
+            pendingStateSaves += 1;
+            try {
+                await fetch(stateUrl, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -330,6 +350,7 @@
                     pass_letters: passButtons.map((button) => button.textContent),
                     cancel_response: cancelResponse,
                     cancel_prompt_id: cancelPromptId,
+                    remaining_seconds: remainingSeconds,
                     screwdriver_left: screwdriver.style.left,
                     screwdriver_top: screwdriver.style.top,
                     removed_screws: keyboardScrews.filter((screw) => screw.classList.contains("removed")).map((screw) => screw.dataset.screw),
@@ -344,7 +365,10 @@
                         rotation: Number(key.dataset.rotation || 0)
                     }))
                 })
-            });
+                });
+            } finally {
+                pendingStateSaves = Math.max(0, pendingStateSaves - 1);
+            }
         }
 
         lock.addEventListener("pointerdown", (event) => event.stopPropagation());
@@ -550,7 +574,8 @@
         });
 
         async function loadGameState() {
-            const mazeSavePendingAtStart = pendingMazeSaves > 0;
+            const localSavePendingAtStart = pendingStateSaves > 0;
+            const localStateVersionAtStart = localStateVersion;
             const response = await fetch(stateUrl);
             const data = await response.json();
             const state = data.state || {};
@@ -576,6 +601,16 @@
             display.classList.toggle("powered-on", remotePowerOn);
             display.classList.toggle("maze-active", remotePowerOn);
             controlPanel.classList.toggle("gold-code-visible", remoteCode === "3067");
+            if (
+                localSavePendingAtStart ||
+                pendingStateSaves > 0 ||
+                localInteractionActive ||
+                localStateVersionAtStart !== localStateVersion
+            ) return;
+            if (Number.isInteger(state.remaining_seconds)) {
+                remainingSeconds = Math.max(0, Math.min(20 * 60, state.remaining_seconds));
+                renderControlTime();
+            }
             if (Array.isArray(state.pass_letters) && state.pass_letters.length === passButtons.length) {
                 passButtons.forEach((button, index) => {
                     const letter = String(state.pass_letters[index] || "P");
@@ -593,7 +628,7 @@
                 piece.classList.add("unlocked");
                 unlockButton.classList.add("unlocked");
             }
-            if (!mazeSavePendingAtStart && pendingMazeSaves === 0) {
+            if (pendingMazeSaves === 0) {
                 if (Number.isInteger(state.maze_column) && state.maze_column >= 0 && state.maze_column < gridColumns) {
                     mazeColumn = state.maze_column;
                 }

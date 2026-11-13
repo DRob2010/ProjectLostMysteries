@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from .models import Player, Room, generate_room_code
 
-ALLOW_SINGLE_PLAYER_START = True
+ALLOW_SINGLE_PLAYER_START = False
 
 
 def player_token_for(request):
@@ -259,7 +259,23 @@ def role_page(request, code):
 
 def win_page(request, code):
     game_room = get_object_or_404(Room, code=code.upper())
-    return render(request, "win.html", {"game_room": game_room})
+    agent = game_room.players.filter(role=Player.AGENT).first()
+    remaining_seconds = None
+    if agent is not None:
+        saved_remaining = agent.game_state.get("remaining_seconds")
+        if isinstance(saved_remaining, int):
+            remaining_seconds = max(0, min(20 * 60, saved_remaining))
+
+    elapsed_seconds = None if remaining_seconds is None else (20 * 60) - remaining_seconds
+    return render(
+        request,
+        "win.html",
+        {
+            "game_room": game_room,
+            "elapsed_minutes": None if elapsed_seconds is None else elapsed_seconds // 60,
+            "elapsed_remainder": None if elapsed_seconds is None else elapsed_seconds % 60,
+        },
+    )
 
 
 def player_state(request, code):

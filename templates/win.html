@@ -10,7 +10,11 @@
 <body>
     <main>
         <h1>Mission Complete</h1>
-        <p>Project GOLD has been cancelled.</p>
+        {% if elapsed_minutes is not None %}
+            <p>Time taken: {{ elapsed_minutes }}:{% if elapsed_remainder < 10 %}0{% endif %}{{ elapsed_remainder }}</p>
+        {% else %}
+            <p>Time taken: unavailable</p>
+        {% endif %}
     </main>
 </body>
 </html>

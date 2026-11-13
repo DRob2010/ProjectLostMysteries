@@ -188,9 +188,25 @@
         }
         const stateUrl = "{% url 'player_state' game_room.code %}?player={{ request.GET.player }}";
         const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+        let pendingStateSaves = 0;
+        let localStateVersion = 0;
+        let localInteractionActive = false;
+
+        document.addEventListener("pointerdown", (event) => {
+            if (event.target.closest(".interactable, button")) localInteractionActive = true;
+        });
+        document.addEventListener("pointerup", () => {
+            window.setTimeout(() => { localInteractionActive = false; }, 120);
+        });
+        document.addEventListener("pointercancel", () => {
+            localInteractionActive = false;
+        });
 
         async function saveGameState() {
-            await fetch(stateUrl, {
+            localStateVersion += 1;
+            pendingStateSaves += 1;
+            try {
+                await fetch(stateUrl, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -225,7 +241,10 @@
                         open: file.classList.contains("opened")
                     }))
                 })
-            });
+                });
+            } finally {
+                pendingStateSaves = Math.max(0, pendingStateSaves - 1);
+            }
         }
         let dragging = false;
         let moved = false;
@@ -596,6 +615,8 @@
         pocketKnife.addEventListener("click", (event) => event.stopPropagation());
 
         async function loadGameState() {
+            const localSavePendingAtStart = pendingStateSaves > 0;
+            const localStateVersionAtStart = localStateVersion;
             const response = await fetch(stateUrl);
             const data = await response.json();
             const state = data.state || {};
@@ -615,6 +636,12 @@
                 window.location.href = "{% url 'win_page' game_room.code %}";
                 return;
             }
+            if (
+                localSavePendingAtStart ||
+                pendingStateSaves > 0 ||
+                localInteractionActive ||
+                localStateVersionAtStart !== localStateVersion
+            ) return;
             if (state.magnifier_left) piece.style.left = state.magnifier_left;
             if (state.magnifier_top) piece.style.top = state.magnifier_top;
             if (state.file_left) caseFile.style.left = state.file_left;
