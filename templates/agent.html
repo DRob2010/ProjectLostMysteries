@@ -140,6 +140,7 @@
         let mazeComplete = false;
         const endColumn = 5;
         const endRow = 4;
+        let pendingMazeSaves = 0;
         let remainingSeconds = 20 * 60;
 
         function updateControlTime() {
@@ -206,7 +207,12 @@
             mazeRow = nextRow;
             updateMazeDot();
             if (mazeColumn === endColumn && mazeRow === endRow) completeMaze();
-            saveGameState();
+            pendingMazeSaves += 1;
+            saveGameState()
+                .catch(() => {})
+                .finally(() => {
+                    pendingMazeSaves = Math.max(0, pendingMazeSaves - 1);
+                });
         }
 
         function completeMaze() {
@@ -544,6 +550,7 @@
         });
 
         async function loadGameState() {
+            const mazeSavePendingAtStart = pendingMazeSaves > 0;
             const response = await fetch(stateUrl);
             const data = await response.json();
             const state = data.state || {};
@@ -586,13 +593,15 @@
                 piece.classList.add("unlocked");
                 unlockButton.classList.add("unlocked");
             }
-            if (Number.isInteger(state.maze_column) && state.maze_column >= 0 && state.maze_column < gridColumns) {
-                mazeColumn = state.maze_column;
+            if (!mazeSavePendingAtStart && pendingMazeSaves === 0) {
+                if (Number.isInteger(state.maze_column) && state.maze_column >= 0 && state.maze_column < gridColumns) {
+                    mazeColumn = state.maze_column;
+                }
+                if (Number.isInteger(state.maze_row) && state.maze_row >= 0 && state.maze_row < gridRows) {
+                    mazeRow = state.maze_row;
+                }
+                updateMazeDot();
             }
-            if (Number.isInteger(state.maze_row) && state.maze_row >= 0 && state.maze_row < gridRows) {
-                mazeRow = state.maze_row;
-            }
-            updateMazeDot();
             if (state.maze_complete) completeMaze();
             if (state.screwdriver_left) screwdriver.style.left = state.screwdriver_left;
             if (state.screwdriver_top) screwdriver.style.top = state.screwdriver_top;
